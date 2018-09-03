@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-web-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: my-deployment
+status:
+  loadBalancer:
+    ingress:
+    - ip: 60.248.176.103
+  #  loadBalancerSourceRanges:
+  #- 130.211.204.1/32
+  #- 130.211.204.2/32  
+

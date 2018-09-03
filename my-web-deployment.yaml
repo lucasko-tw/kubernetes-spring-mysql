@@ -1,0 +1,32 @@
+apiVersion: apps/v1beta2 # for kubectl versions >= 1.9.0 use apps/v1
+kind: Deployment
+metadata:
+  name: my-web-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-deployment
+  template:
+    metadata:
+      labels:
+        app: my-deployment
+    spec:
+      containers:
+      - name: my-spring
+        image: lucasko/spring-boot-stateless
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REDIS_HOST
+          value: "my-redis-service"
+        - name: MYSQL_HOST
+          value: "my-mysql-service"
+        - name: MYSQL_DB
+          value: "mydb"
+        - name: MYSQL_USERNAME
+          value: "root"
+        - name: MYSQL_PASSWORD
+          value: "123456789"
+ 
+
