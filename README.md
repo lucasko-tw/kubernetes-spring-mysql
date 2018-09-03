@@ -203,55 +203,141 @@ spec:
 
 2. redis uses port 6379.
 
+
+create redis deployment
+
 ```sh
-kubectl create -f my-redis-service.yaml
+kubectl create -f my-redis-deployment.yaml
 ```
 
+Check out the deployment
 
+```sh
+kubectl get deployment
+
+NAME                  DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+my-mysql-deployment   1         1         1            1           2m
+my-redis-deployment   1         1         1            1           1m
+```
 
 
 ### Step 5. create redis service.
 
 
-```yaml
-
-```
+create redis service
 
 ```sh
-kubectl create -f my-.yaml
+kubectl create -f my-redis-service.yaml
 ```
 
-
-
-
-### Step 6. create spring deployment.
-
-
-
-```yaml
-
-```
+Check out the service
 
 ```sh
-kubectl create -f my-.yaml
+kubectl get service
+
+NAME               TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)        AGE
+kubernetes         ClusterIP      10.11.240.1     <none>         443/TCP        8h
+my-mysql-service   ClusterIP      10.11.242.82    <none>         3306/TCP       4h
+my-redis-service   ClusterIP      10.11.247.76    <none>         6379/TCP       3h
 ```
 
+
+### Step 6. Create Spring Deployment.
+
+1. Web Application is developed by Spring Boot.
+
+2. Spring Boot Image is from My Docker Hub.
+
+3. This web application uses MySQL and Redis
+
+4. Redis is used to store session.
+
+```yaml
+apiVersion: apps/v1beta2 # for kubectl versions >= 1.9.0 use apps/v1
+kind: Deployment
+metadata:
+  name: my-web-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-deployment
+  template:
+    metadata:
+      labels:
+        app: my-deployment
+    spec:
+      containers:
+      - name: my-spring
+        image: lucasko/spring-boot-stateless
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REDIS_HOST
+          value: "my-redis-service"
+        - name: MYSQL_HOST
+          value: "my-mysql-service"
+        - name: MYSQL_DB
+          value: "mydb"
+        - name: MYSQL_USERNAME
+          value: "root"
+        - name: MYSQL_PASSWORD
+          value: "123456789"
+```
+
+ * REDIS_HOST is `my-redis-service`. The redis service will forward connection to my-redis-deployment
+
+ * MYSQL_DB is `my-mysql-service`. The mysql service will forward connection to my-mysql-deployment
+
+
+```sh
+kubectl create -f my-web-deployment.yaml
+```
 
 
 ### Step 7. create spring service.
 
+Create a service with LoadBalancer
 
 ```yaml
-
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-web-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: my-deployment
+status:
+  loadBalancer:
+    ingress:
+    - ip: 60.248.176.103
 ```
+
+ * Forward 80 port to pod's 8080 port.
+ * type is LoadBalancer
+
+create web service
 
 ```sh
-kubectl create -f my-.yaml
+kubectl create -f my-web-service.yaml
 ```
 
+check out the service
 
+```sh
+kubectl get service
 
-
+NAME               TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)        AGE
+kubernetes         ClusterIP      10.11.240.1     <none>         443/TCP        8h
+my-mysql-service   ClusterIP      10.11.242.82    <none>         3306/TCP       4h
+my-redis-service   ClusterIP      10.11.247.76    <none>         6379/TCP       4h
+my-web-service     LoadBalancer   10.11.241.203   35.221.164.6   80:32251/TCP   4h
+```
 
 
 
